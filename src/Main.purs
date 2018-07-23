@@ -2,10 +2,13 @@ module Main
   ( main ) where
 
 import Data.Maybe (Maybe)
+import Data.Options ((:=))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Prelude (Unit)
+import Fetch (fetch)
+import Fetch.Options (defaults, method, url)
+import Prelude (Unit, bind, pure, (<>))
 
 fetchRepos :: Aff (Maybe String)
 fetchRepos = do
