@@ -11,13 +11,14 @@ import Data.Options ((:=))
 import Data.Traversable (traverse)
 import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
-import Effect.Aff (Aff)
-import Effect.Class.Console (log)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log, logShow)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Prelude (Unit, bind, compose, const, map, pure, (<>))
+import Prelude (Unit, bind, compose, const, join, map, pure, (<>))
 
 type Repo =
   { fullName :: String
@@ -61,4 +62,7 @@ parseRepos responseBody =
     bind (toJson responseBody) toRecords
 
 main :: Effect Unit
-main = log "Hello"
+main = launchAff_ do
+  response <- map (compose join (map parseRepos)) fetchRepos
+  _ <- liftEffect (logShow response)
+  liftEffect (log "Hello")
