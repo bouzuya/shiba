@@ -1,10 +1,11 @@
 module Main
   ( main ) where
 
+import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Argonaut (Json, jsonParser)
 import Data.Argonaut as Json
 import Data.Array as Array
-import Data.DateTime (DateTime(..))
+import Data.DateTime (DateTime)
 import Data.Either (Either, either)
 import Data.Maybe (Maybe(..))
 import Data.Options ((:=))
@@ -18,7 +19,7 @@ import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Prelude (Unit, bind, compose, const, join, map, pure, (<>))
+import Prelude (Unit, bind, compose, const, map, pure, (<>))
 
 type Repo =
   { fullName :: String
@@ -63,6 +64,8 @@ parseRepos responseBody =
 
 main :: Effect Unit
 main = launchAff_ do
-  response <- map (compose join (map parseRepos)) fetchRepos
-  _ <- liftEffect (logShow response)
+  repos <- runMaybeT do
+    response <- MaybeT fetchRepos
+    pure (parseRepos response)
+  _ <- liftEffect (logShow repos)
   liftEffect (log "Hello")
