@@ -1,6 +1,7 @@
 module Main
   ( main ) where
 
+import Bouzuya.DateTime (weekOfYear, year)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Argonaut (Json, jsonParser)
 import Data.Argonaut as Json
@@ -15,6 +16,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
+import Effect.Now (nowDate)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
 import Foreign.Object (Object)
@@ -67,5 +69,9 @@ main = launchAff_ do
   repos <- runMaybeT do
     response <- MaybeT fetchRepos
     pure (parseRepos response)
+  today <- liftEffect nowDate
+  let
+    y = year today
+    woy = weekOfYear today
   _ <- liftEffect (logShow repos)
   liftEffect (log "Hello")
