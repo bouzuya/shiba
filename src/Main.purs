@@ -1,14 +1,14 @@
 module Main
   ( main ) where
 
-import Bouzuya.DateTime (weekOfYear, year)
+import Bouzuya.DateTime (Weekday(..), exactDateFromWeekOfYear, weekOfYear, year)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Argonaut (Json, jsonParser)
 import Data.Argonaut as Json
 import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Either (Either, either)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromJust)
 import Data.Options ((:=))
 import Data.Traversable (traverse)
 import DateTimeFormat as DateTimeFormat
@@ -21,7 +21,8 @@ import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Prelude (Unit, bind, compose, const, map, pure, (<>))
+import Partial.Unsafe (unsafePartial)
+import Prelude (Unit, bind, bottom, compose, const, map, pure, top, (<>))
 
 type Repo =
   { fullName :: String
@@ -73,5 +74,9 @@ main = launchAff_ do
   let
     y = year today
     woy = weekOfYear today
+    fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom))
+    ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))
+  _ <- liftEffect (logShow fd)
+  _ <- liftEffect (logShow ld)
   _ <- liftEffect (logShow repos)
   liftEffect (log "Hello")
