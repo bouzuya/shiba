@@ -1,12 +1,11 @@
 module Main
   ( main ) where
 
-import Bouzuya.DateTime (Weekday(..), exactDateFromWeekOfYear, weekOfYear, year)
-import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
+import Bouzuya.DateTime (Time(..), exactDateFromWeekOfYear, weekOfYear, year)
 import Data.Argonaut (Json, jsonParser)
 import Data.Argonaut as Json
 import Data.Array as Array
-import Data.DateTime (DateTime)
+import Data.DateTime (DateTime(..))
 import Data.Either (Either, either)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Options ((:=))
@@ -22,7 +21,7 @@ import Fetch.Options (defaults, method, url)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, bottom, compose, const, map, pure, top, (<>))
+import Prelude (Unit, bind, bottom, compose, const, join, map, pure, top, (&&), (<=), (<>))
 
 type Repo =
   { fullName :: String
@@ -67,16 +66,20 @@ parseRepos responseBody =
 
 main :: Effect Unit
 main = launchAff_ do
-  repos <- runMaybeT do
-    response <- MaybeT fetchRepos
-    pure (parseRepos response)
+  repos <- map (compose join (map parseRepos)) fetchRepos
   today <- liftEffect nowDate
   let
     y = year today
     woy = weekOfYear today
     fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom))
     ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))
+    toDateTime d = DateTime d (Time bottom bottom bottom bottom)
+    fdt = toDateTime fd
+    ldt = toDateTime ld
+    filter = Array.filter (\a -> fdt <= a.pushedAt && a.pushedAt <= ldt)
+    filtered = map filter repos
+  _ <- liftEffect (logShow repos)
   _ <- liftEffect (logShow fd)
   _ <- liftEffect (logShow ld)
-  _ <- liftEffect (logShow repos)
+  _ <- liftEffect (logShow filtered)
   liftEffect (log "Hello")
