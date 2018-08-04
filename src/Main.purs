@@ -15,7 +15,7 @@ import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
 import Effect.Aff (Aff, error, launchAff_, throwError)
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log, logShow)
+import Effect.Class.Console (log)
 import Effect.Now (nowDate)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
