@@ -4,15 +4,16 @@ module Main
 import Bouzuya.DateTime (Time(..), exactDateFromWeekOfYear, weekOfYear, year)
 import Data.Argonaut (Json, jsonParser)
 import Data.Argonaut as Json
+import Data.Array (intercalate)
 import Data.Array as Array
 import Data.DateTime (DateTime(..))
 import Data.Either (Either, either)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..), fromJust, maybe)
 import Data.Options ((:=))
 import Data.Traversable (traverse)
 import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (Aff, error, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
@@ -66,7 +67,8 @@ parseRepos responseBody =
 
 main :: Effect Unit
 main = launchAff_ do
-  repos <- map (compose join (map parseRepos)) fetchRepos
+  reposMaybe <- map (compose join (map parseRepos)) fetchRepos
+  repos <- maybe (throwError (error "error")) pure reposMaybe
   today <- liftEffect nowDate
   let
     y = year today
@@ -77,9 +79,16 @@ main = launchAff_ do
     fdt = toDateTime fd
     ldt = toDateTime ld
     filter = Array.filter (\a -> fdt <= a.pushedAt && a.pushedAt <= ldt)
-    filtered = map filter repos
-  _ <- liftEffect (logShow repos)
-  _ <- liftEffect (logShow fd)
-  _ <- liftEffect (logShow ld)
-  _ <- liftEffect (logShow filtered)
-  liftEffect (log "Hello")
+    filtered = filter repos
+    dateLine =
+      ( (DateTimeFormat.format DateTimeFormat.iso8601DateFormat fdt)
+      <> "/"
+      <> (DateTimeFormat.format DateTimeFormat.iso8601DateFormat ldt)
+      )
+  liftEffect
+    (log
+      (intercalate
+        "\n"
+        ([dateLine, ""] <> (map ("- " <> _) (map _.fullName filtered)))
+      )
+    )

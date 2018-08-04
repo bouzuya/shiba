@@ -1,5 +1,6 @@
 module DateTimeFormat
   ( format
+  , iso8601DateFormat
   , iso8601DateTimeFormatWithoutMilliseconds
   , parse
   ) where
@@ -11,6 +12,18 @@ import Data.List as List
 
 format :: Formatter.Formatter -> DateTime -> String
 format = Formatter.format
+
+-- ISO 8601 date format (extended)
+-- e.g. 2018-01-02
+iso8601DateFormat :: Formatter.Formatter
+iso8601DateFormat =
+  List.fromFoldable
+  [ Formatter.YearFull
+  , Formatter.Placeholder "-"
+  , Formatter.MonthTwoDigits
+  , Formatter.Placeholder "-"
+  , Formatter.DayOfMonthTwoDigits
+  ]
 
 -- ISO 8601 date time format (without milliseconds)
 -- e.g. 2018-01-02T03:04:05Z
