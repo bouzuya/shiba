@@ -89,6 +89,6 @@ main = launchAff_ do
     (log
       (intercalate
         "\n"
-        ([dateLine, ""] <> (map ("- " <> _) (map _.fullName filtered)))
+        ([dateLine, ""] <> (map (\s -> "- [" <> s <> "][]") (map _.fullName filtered)))
       )
     )
