@@ -6,6 +6,9 @@
     "name": "bouzuya",
     "url": "https://bouzuya.net/"
   },
+  "dependencies": {
+    "axios": "^0.18.0"
+  },
   "devDependencies": {
     "psc-package": "^0.3.2",
     "purescript": "^0.12.0"
@@ -17,9 +20,7 @@
     "build": "psc-package build",
     "psc-package": "psc-package",
     "repl": "psc-package repl",
+    "start": "node -e 'require(\"./output/Main/index.js\").main()'",
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "axios": "^0.18.0"
   }
 }
