@@ -20,7 +20,7 @@
     "build": "psc-package build",
     "psc-package": "psc-package",
     "repl": "psc-package repl",
-    "start": "node -e 'require(\"./output/Main/index.js\").main()'",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
