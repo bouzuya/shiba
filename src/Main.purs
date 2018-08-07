@@ -15,7 +15,7 @@ import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
 import Effect.Aff (Aff, error, launchAff_, throwError)
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
+import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
@@ -28,6 +28,18 @@ type Repo =
   { fullName :: String
   , pushedAt :: DateTime
   }
+
+fetchCommits :: String -> DateTime -> DateTime -> Aff (Maybe String)
+fetchCommits fullName since until = do
+  let
+    s = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds since
+    u = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds until
+  response <- fetch
+    ( defaults
+    <> method := "GET"
+    <> url := ("https://api.github.com/repos/" <> fullName <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100")
+    )
+  pure response.body
 
 fetchRepos :: Aff (Maybe String)
 fetchRepos = do
@@ -80,6 +92,11 @@ main = launchAff_ do
     ldt = toDateTime ld
     filter = Array.filter (\a -> fdt <= a.pushedAt && a.pushedAt <= ldt)
     filtered = filter repos
+    repoMaybe = Array.head repos
+  repo <- maybe (throwError (error "error")) pure repoMaybe
+  commitsMaybe <- fetchCommits repo.fullName fdt ldt
+  _ <- liftEffect (logShow commitsMaybe)
+  let
     dateLine =
       ( (DateTimeFormat.format DateTimeFormat.iso8601DateFormat fdt)
       <> "/"
