@@ -5,31 +5,16 @@ import Bouzuya.DateTime (Time(..), exactDateFromWeekOfYear, weekOfYear, year)
 import Data.Array (intercalate)
 import Data.Array as Array
 import Data.DateTime (DateTime(..))
-import Data.Maybe (Maybe, fromJust, maybe)
-import Data.Options ((:=))
+import Data.Maybe (fromJust, maybe)
 import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
-import Effect.Aff (Aff, error, launchAff_, throwError)
+import Effect.Aff (error, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
-import Fetch (fetch)
-import Fetch.Options (defaults, method, url)
-import GitHub (fetchCommit, fetchRepos, fetchTags)
+import GitHub (fetchCommit, fetchCommits, fetchRepos, fetchTags)
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, bottom, map, pure, top, (&&), (<=), (<>))
-
-fetchCommits :: String -> DateTime -> DateTime -> Aff (Maybe String)
-fetchCommits fullName since until = do
-  let
-    s = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds since
-    u = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds until
-  response <- fetch
-    ( defaults
-    <> method := "GET"
-    <> url := ("https://api.github.com/repos/" <> fullName <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100")
-    )
-  pure response.body
 
 main :: Effect Unit
 main = launchAff_ do
@@ -49,7 +34,7 @@ main = launchAff_ do
     filtered = filter repos
     repoMaybe = Array.head repos
   repo <- maybe (throwError (error "error")) pure repoMaybe
-  commitsMaybe <- fetchCommits repo.fullName fdt ldt
+  commitsMaybe <- fetchCommits repo fdt ldt
   _ <- liftEffect (logShow commitsMaybe)
   tagsMaybe <- fetchTags repo
   tags <- maybe (throwError (error "error")) pure tagsMaybe

@@ -3,6 +3,7 @@ module GitHub
   , Repo
   , Tag
   , fetchCommit
+  , fetchCommits
   , fetchRepos
   , fetchTags
   ) where
@@ -27,7 +28,9 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (bind, compose, const, join, map, pure, (<>))
 
 type Commit =
-  { authorDate :: DateTime }
+  { authorDate :: DateTime
+  , sha :: String
+  }
 
 type Repo =
   { fullName :: String
@@ -78,6 +81,7 @@ parseCommit responseBody =
     toRecord :: Json -> Maybe Commit
     toRecord json = do
       o <- Json.toObject json
+      sha <- bind (Object.lookup "sha" o) Json.toString
       commit <- bind (Object.lookup "commit" o) Json.toObject
       author <- bind (Object.lookup "author" commit) Json.toObject
       authorDateString <- bind (Object.lookup "date" author) Json.toString
@@ -88,9 +92,55 @@ parseCommit responseBody =
           (DateTimeFormat.parse
             DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
             authorDateString)
-      pure { authorDate }
+      pure { authorDate, sha }
   in
     bind (toJson responseBody) toRecord
+
+fetchCommits :: Repo -> DateTime -> DateTime -> Aff (Maybe (Array Commit))
+fetchCommits r since until =
+  let { owner, repo } = ownerAndRepo r
+  in map (compose join (map parseCommits)) (fetchCommits' owner repo since until)
+
+fetchCommits' :: String -> String -> DateTime -> DateTime -> Aff (Maybe String)
+fetchCommits' owner repo since until = do
+  let
+    s = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds since
+    u = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds until
+  response <- fetch
+    ( defaults
+    <> method := "GET"
+    <> url := ("https://api.github.com/repos/" <> owner <> "/" <> repo <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100")
+    )
+  pure response.body
+
+parseCommits :: String -> Maybe (Array Commit)
+parseCommits responseBody =
+  let
+    maybeFromEither :: forall a b. Either a b -> Maybe b
+    maybeFromEither = either (const Nothing) Just
+    toJson :: String -> Maybe Json
+    toJson = compose maybeFromEither jsonParser
+    toRecords :: Json -> Maybe (Array Commit)
+    toRecords json = do
+      array <- Json.toArray json
+      pure (Array.catMaybes (map toRecord array))
+    toRecord :: Json -> Maybe Commit
+    toRecord json = do
+      o <- Json.toObject json
+      sha <- bind (Object.lookup "sha" o) Json.toString
+      commit <- bind (Object.lookup "commit" o) Json.toObject
+      author <- bind (Object.lookup "author" commit) Json.toObject
+      authorDateString <- bind (Object.lookup "date" author) Json.toString
+      authorDate <-
+        either
+          (const Nothing)
+          Just
+          (DateTimeFormat.parse
+            DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
+            authorDateString)
+      pure { authorDate, sha }
+  in
+    bind (toJson responseBody) toRecords
 
 fetchRepos :: String -> Aff (Maybe (Array Repo))
 fetchRepos user = map (compose join (map parseRepos)) (fetchRepos' user)
