@@ -2,15 +2,11 @@ module Main
   ( main ) where
 
 import Bouzuya.DateTime (Time(..), exactDateFromWeekOfYear, weekOfYear, year)
-import Data.Argonaut (Json, jsonParser)
-import Data.Argonaut as Json
 import Data.Array (intercalate)
 import Data.Array as Array
 import Data.DateTime (DateTime(..))
-import Data.Either (Either, either)
-import Data.Maybe (Maybe(..), fromJust, maybe)
+import Data.Maybe (Maybe, fromJust, maybe)
 import Data.Options ((:=))
-import Data.Traversable (traverse)
 import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
 import Effect.Aff (Aff, error, launchAff_, throwError)
@@ -19,11 +15,9 @@ import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
-import Foreign.Object (Object)
-import Foreign.Object as Object
 import GitHub (Repo, fetchRepos)
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, bottom, compose, const, join, map, pure, top, (&&), (<=), (<>))
+import Prelude (Unit, bind, bottom, map, pure, top, (&&), (<=), (<>))
 
 fetchCommits :: String -> DateTime -> DateTime -> Aff (Maybe String)
 fetchCommits fullName since until = do
