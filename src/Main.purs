@@ -5,16 +5,16 @@ import Bouzuya.DateTime (Time(..), exactDateFromWeekOfYear, weekOfYear, year)
 import Data.Array (intercalate)
 import Data.Array as Array
 import Data.DateTime (DateTime(..))
-import Data.Maybe (fromJust, maybe)
+import Data.Maybe (fromJust, isJust, maybe)
 import DateTimeFormat as DateTimeFormat
 import Effect (Effect)
 import Effect.Aff (error, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
-import GitHub (fetchCommit, fetchCommits, fetchRepos, fetchTags)
+import GitHub (fetchCommits, fetchRepos, fetchTags)
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, bottom, map, pure, top, (&&), (<=), (<>))
+import Prelude (Unit, bind, bottom, eq, map, pure, top, (&&), (<=), (<>))
 
 main :: Effect Unit
 main = launchAff_ do
@@ -35,14 +35,14 @@ main = launchAff_ do
     repoMaybe = Array.head repos
   repo <- maybe (throwError (error "error")) pure repoMaybe
   commitsMaybe <- fetchCommits repo fdt ldt
-  _ <- liftEffect (logShow commitsMaybe)
+  commits <- maybe (throwError (error "error")) pure commitsMaybe
   tagsMaybe <- fetchTags repo
   tags <- maybe (throwError (error "error")) pure tagsMaybe
-  let tagMaybe = Array.head tags
-  tag <- maybe (throwError (error "error")) pure tagMaybe
-  commitMaybe <- fetchCommit repo tag.commit.sha
-  _ <- liftEffect (logShow tagsMaybe)
-  _ <- liftEffect (logShow commitMaybe)
+  let
+    filteredTags = Array.filter
+      (\tag -> isJust (Array.find (\commit -> eq tag.commit.sha commit.sha) commits))
+      tags
+  _ <- liftEffect (logShow filteredTags)
   let
     dateLine =
       ( (DateTimeFormat.format DateTimeFormat.iso8601DateFormat fdt)
