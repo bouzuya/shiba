@@ -41,6 +41,15 @@ fetchCommits fullName since until = do
     )
   pure response.body
 
+fetchTags :: Repo -> Aff (Maybe String)
+fetchTags { fullName } = do
+  response <- fetch
+    ( defaults
+    <> method := "GET"
+    <> url := ("https://api.github.com/repos/" <> fullName <> "/tags?per_page=100")
+    )
+  pure response.body
+
 fetchRepos :: Aff (Maybe String)
 fetchRepos = do
   response <- fetch
@@ -96,6 +105,8 @@ main = launchAff_ do
   repo <- maybe (throwError (error "error")) pure repoMaybe
   commitsMaybe <- fetchCommits repo.fullName fdt ldt
   _ <- liftEffect (logShow commitsMaybe)
+  tagsMaybe <- fetchTags repo
+  _ <- liftEffect (logShow tagsMaybe)
   let
     dateLine =
       ( (DateTimeFormat.format DateTimeFormat.iso8601DateFormat fdt)
