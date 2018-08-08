@@ -24,15 +24,15 @@ type Repo =
   , pushedAt :: DateTime
   }
 
-fetchRepos :: Aff (Maybe (Array Repo))
-fetchRepos = map (compose join (map parseRepos)) fetchRepos'
+fetchRepos :: String -> Aff (Maybe (Array Repo))
+fetchRepos user = map (compose join (map parseRepos)) (fetchRepos' user)
 
-fetchRepos' :: Aff (Maybe String)
-fetchRepos' = do
+fetchRepos' :: String -> Aff (Maybe String)
+fetchRepos' user = do
   response <- fetch
     ( defaults
     <> method := "GET"
-    <> url := "https://api.github.com/users/bouzuya/repos?type=owner&sort=pushed&direction=desc&per_page=100"
+    <> url := ("https://api.github.com/users/" <> user <> "/repos?type=owner&sort=pushed&direction=desc&per_page=100")
     )
   pure response.body
 

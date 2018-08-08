@@ -48,7 +48,8 @@ fetchTags { fullName } = do
 
 main :: Effect Unit
 main = launchAff_ do
-  reposMaybe <- fetchRepos
+  let user = "bouzuya"
+  reposMaybe <- fetchRepos user
   repos <- maybe (throwError (error "error")) pure reposMaybe
   today <- liftEffect nowDate
   let
