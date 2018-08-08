@@ -15,7 +15,7 @@ import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
-import GitHub (Repo, fetchRepos)
+import GitHub (fetchRepos, fetchTags)
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, bottom, map, pure, top, (&&), (<=), (<>))
 
@@ -28,15 +28,6 @@ fetchCommits fullName since until = do
     ( defaults
     <> method := "GET"
     <> url := ("https://api.github.com/repos/" <> fullName <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100")
-    )
-  pure response.body
-
-fetchTags :: Repo -> Aff (Maybe String)
-fetchTags { fullName } = do
-  response <- fetch
-    ( defaults
-    <> method := "GET"
-    <> url := ("https://api.github.com/repos/" <> fullName <> "/tags?per_page=100")
     )
   pure response.body
 
