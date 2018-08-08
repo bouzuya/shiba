@@ -15,7 +15,7 @@ import Effect.Class.Console (log, logShow)
 import Effect.Now (nowDate)
 import Fetch (fetch)
 import Fetch.Options (defaults, method, url)
-import GitHub (fetchRepos, fetchTags)
+import GitHub (fetchCommit, fetchRepos, fetchTags)
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, bottom, map, pure, top, (&&), (<=), (<>))
 
@@ -52,7 +52,12 @@ main = launchAff_ do
   commitsMaybe <- fetchCommits repo.fullName fdt ldt
   _ <- liftEffect (logShow commitsMaybe)
   tagsMaybe <- fetchTags repo
+  tags <- maybe (throwError (error "error")) pure tagsMaybe
+  let tagMaybe = Array.head tags
+  tag <- maybe (throwError (error "error")) pure tagMaybe
+  commitMaybe <- fetchCommit repo tag.commit.sha
   _ <- liftEffect (logShow tagsMaybe)
+  _ <- liftEffect (logShow commitMaybe)
   let
     dateLine =
       ( (DateTimeFormat.format DateTimeFormat.iso8601DateFormat fdt)
