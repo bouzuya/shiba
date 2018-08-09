@@ -16,7 +16,7 @@ import Effect.Class.Console (log)
 import Effect.Now (nowDate)
 import GitHub (Tag, Repo, fetchCommits, fetchRepos, fetchTags)
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, bottom, eq, map, pure, top, (&&), (<=), (<>))
+import Prelude (Unit, bind, bottom, eq, map, pure, top, (&&), (<=), (<>), (>))
 
 getTags :: DateTime -> DateTime -> Repo -> Aff (Array Tag)
 getTags fdt ldt repo = do
@@ -56,10 +56,14 @@ main = launchAff_ do
       <> "/"
       <> (DateTimeFormat.format DateTimeFormat.iso8601DateFormat ldt)
       )
-  liftEffect
-    (log
-      (intercalate
-        "\n"
-        ([dateLine, ""] <> (map (\(Tuple r ts) -> "- [" <> r.fullName <> "][] …… " <> (intercalate "," (map _.name ts))) zipped))
-      )
-    )
+    repoLines =
+      map
+        (\(Tuple r ts) ->
+          "- [" <> r.fullName <> "][] ... "
+          <>
+            if Array.length ts > 0
+            then (intercalate "," (map _.name ts))
+            else "(none)"
+        )
+        zipped
+  liftEffect (log (intercalate "\n" ([dateLine, ""] <> repoLines)))
