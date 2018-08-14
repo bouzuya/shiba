@@ -8,6 +8,8 @@ module GitHub
   , fetchTags
   ) where
 
+import Bouzuya.HTTP.Client (fetch, method, url)
+import Bouzuya.HTTP.Method as Method
 import Data.Argonaut (Json, jsonParser)
 import Data.Argonaut as Json
 import Data.Array as Array
@@ -20,8 +22,6 @@ import Data.String as String
 import Data.Traversable (traverse)
 import DateTimeFormat as DateTimeFormat
 import Effect.Aff (Aff)
-import Fetch (fetch)
-import Fetch.Options (defaults, method, url)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Partial.Unsafe (unsafePartial)
@@ -64,11 +64,7 @@ fetchCommit' :: String -> String -> String -> Aff (Maybe String)
 fetchCommit' owner repo sha = do
   let baseUrl = "https://api.github.com"
   let path = "/repos/" <> owner <> "/" <> repo <> "/commits/" <> sha
-  response <- fetch
-    ( defaults
-    <> method := "GET"
-    <> url := (baseUrl <> path)
-    )
+  response <- fetch (method := Method.GET <> url := (baseUrl <> path))
   pure response.body
 
 parseCommit :: String -> Maybe Commit
@@ -106,11 +102,8 @@ fetchCommits' owner repo since until = do
   let
     s = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds since
     u = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds until
-  response <- fetch
-    ( defaults
-    <> method := "GET"
-    <> url := ("https://api.github.com/repos/" <> owner <> "/" <> repo <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100")
-    )
+    url' = "https://api.github.com/repos/" <> owner <> "/" <> repo <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100"
+  response <- fetch (method := Method.GET <> url := url')
   pure response.body
 
 parseCommits :: String -> Maybe (Array Commit)
@@ -147,11 +140,8 @@ fetchRepos user = map (compose join (map parseRepos)) (fetchRepos' user)
 
 fetchRepos' :: String -> Aff (Maybe String)
 fetchRepos' user = do
-  response <- fetch
-    ( defaults
-    <> method := "GET"
-    <> url := ("https://api.github.com/users/" <> user <> "/repos?type=owner&sort=pushed&direction=desc&per_page=100")
-    )
+  let url' = "https://api.github.com/users/" <> user <> "/repos?type=owner&sort=pushed&direction=desc&per_page=100"
+  response <- fetch (method := Method.GET <> url := url')
   pure response.body
 
 parseRepos :: String -> Maybe (Array Repo)
@@ -186,11 +176,8 @@ fetchTags repo = map (compose join (map parseTags)) (fetchTags' repo)
 
 fetchTags' :: Repo -> Aff (Maybe String)
 fetchTags' { fullName } = do
-  response <- fetch
-    ( defaults
-    <> method := "GET"
-    <> url := ("https://api.github.com/repos/" <> fullName <> "/tags?per_page=100")
-    )
+  let url' = "https://api.github.com/repos/" <> fullName <> "/tags?per_page=100"
+  response <- fetch (method := Method.GET <> url := url')
   pure response.body
 
 parseTags :: String -> Maybe (Array Tag)

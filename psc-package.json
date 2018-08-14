@@ -3,14 +3,16 @@
   "set": "bouzuya-20180814",
   "source": "https://github.com/bouzuya/package-sets.git",
   "depends": [
-    "bouzuya-datetime",
-    "now",
-    "argonaut",
-    "formatters",
-    "aff-promise",
     "aff",
+    "aff-promise",
+    "argonaut",
+    "bouzuya-datetime",
+    "bouzuya-http-client",
+    "bouzuya-http-method",
+    "formatters",
+    "now",
     "options",
-    "psci-support",
-    "prelude"
+    "prelude",
+    "psci-support"
   ]
 }
