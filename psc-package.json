@@ -5,7 +5,6 @@
   "depends": [
     "aff",
     "aff-promise",
-    "argonaut",
     "bouzuya-datetime",
     "bouzuya-http-client",
     "bouzuya-http-method",
@@ -13,6 +12,7 @@
     "now",
     "options",
     "prelude",
-    "psci-support"
+    "psci-support",
+    "simple-json"
   ]
 }
