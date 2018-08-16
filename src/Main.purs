@@ -44,7 +44,7 @@ main = launchAff_ do
     ldt = toDateTime ld
     filter = Array.filter (\a -> fdt <= a.pushedAt && a.pushedAt <= ldt)
   reposMaybe <- fetchRepos user
-  repos <- maybe (throwError (error "error")) pure reposMaybe
+  repos <- maybe (throwError (error "repos error")) pure reposMaybe
   let filtered = filter repos
   tags <- traverse (getTags fdt ldt) filtered
   let
