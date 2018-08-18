@@ -1,11 +1,12 @@
 module Main
   ( main ) where
 
-import Bouzuya.DateTime (Time(..), exactDateFromWeekOfYear, weekOfYear, year)
+import Bouzuya.DateTime (Time(..), adjust, exactDateFromWeekOfYear, weekOfYear, year)
 import Data.Array (intercalate, zip)
 import Data.Array as Array
 import Data.DateTime (DateTime(..))
 import Data.Maybe (fromJust, isJust, maybe)
+import Data.Time.Duration (Hours(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import DateTimeFormat as DateTimeFormat
@@ -16,7 +17,7 @@ import Effect.Class.Console (log)
 import Effect.Now (nowDate)
 import GitHub (Tag, Repo, fetchCommits, fetchRepos, fetchTags)
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, bottom, eq, map, pure, top, (&&), (<=), (<>), (>))
+import Prelude (Unit, bind, bottom, eq, map, negate, pure, top, (&&), (<=), (<>), (>))
 
 getTags :: DateTime -> DateTime -> Repo -> Aff (Array Tag)
 getTags fdt ldt repo = do
@@ -40,13 +41,15 @@ main = launchAff_ do
     fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom))
     ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))
     toDateTime d = DateTime d (Time bottom bottom bottom bottom)
-    fdt = toDateTime fd
-    ldt = toDateTime ld
-    filter = Array.filter (\a -> fdt <= a.pushedAt && a.pushedAt <= ldt)
+    fdt = (toDateTime fd)
+    fdtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) fdt))
+    ldt = (toDateTime ld)
+    ldtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) ldt))
+    filter = Array.filter (\a -> fdtwz <= a.pushedAt && a.pushedAt <= ldtwz)
   reposMaybe <- fetchRepos user
   repos <- maybe (throwError (error "repos error")) pure reposMaybe
   let filtered = filter repos
-  tags <- traverse (getTags fdt ldt) filtered
+  tags <- traverse (getTags fdtwz ldtwz) filtered
   let
     zipped :: Array (Tuple Repo (Array Tag))
     zipped = zip filtered tags
