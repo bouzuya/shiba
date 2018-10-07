@@ -38,13 +38,13 @@ main = launchAff_ do
     user = "bouzuya"
     y = year today
     woy = weekOfYear today
-    fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom))
-    ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))
+    fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom)) -- JST
+    ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))    -- JST
     toDateTime d = DateTime d (Time bottom bottom bottom bottom)
     fdt = (toDateTime fd)
-    fdtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) fdt))
+    fdtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) fdt)) -- UTC
     ldt = (toDateTime ld)
-    ldtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) ldt))
+    ldtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) ldt)) -- UTC
     filter = Array.filter (\a -> fdtwz <= a.pushedAt && a.pushedAt <= ldtwz)
   reposMaybe <- fetchRepos user
   repos <- maybe (throwError (error "repos error")) pure reposMaybe
