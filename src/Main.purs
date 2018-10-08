@@ -45,7 +45,7 @@ main = launchAff_ do
     fdtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) fdt)) -- UTC
     ldt = (toDateTime ld)
     ldtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) ldt)) -- UTC
-    filter = Array.filter (\a -> fdtwz <= a.pushedAt && a.pushedAt <= ldtwz)
+    filter = Array.filter (\a -> fdtwz <= a.updatedAt && a.updatedAt <= ldtwz)
   reposMaybe <- fetchRepos user
   repos <- maybe (throwError (error "repos error")) pure reposMaybe
   let filtered = filter repos

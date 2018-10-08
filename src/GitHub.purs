@@ -21,9 +21,6 @@ import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import DateTimeFormat as DateTimeFormat
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
-import Effect.Console (logShow)
 import Foreign.Object as Object
 import Partial.Unsafe (unsafePartial)
 import Prelude (bind, compose, const, join, map, pure, (<>))
@@ -41,12 +38,12 @@ type CommitJSON =
 
 type Repo =
   { fullName :: String
-  , pushedAt :: DateTime
+  , updatedAt :: DateTime
   }
 
 type RepoJSON =
   { full_name :: String
-  , pushed_at :: String
+  , updated_at :: String
   }
 
 type Tag =
@@ -158,7 +155,7 @@ fetchRepos user = map (compose join (map parseRepos)) (fetchRepos' user)
 
 fetchRepos' :: String -> Aff (Maybe String)
 fetchRepos' user = do
-  let url' = "https://api.github.com/users/" <> user <> "/repos?type=owner&sort=pushed&direction=desc&per_page=100"
+  let url' = "https://api.github.com/users/" <> user <> "/repos?type=owner&sort=updated&direction=desc&per_page=100"
   response <-
     fetch
       ( headers := (Object.fromFoldable [(Tuple "User-Agent" "shiba")])
@@ -175,14 +172,14 @@ parseRepos responseBody =
     toRecord :: RepoJSON -> Maybe Repo
     toRecord json = do
       fullName <- pure json.full_name
-      pushedAtString <- pure json.pushed_at
-      pushedAt <-
+      updatedAtString <- pure json.updated_at
+      updatedAt <-
         maybeFromEither
           ( DateTimeFormat.parse
               DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
-              pushedAtString
+              updatedAtString
           )
-      pure { fullName, pushedAt }
+      pure { fullName, updatedAt }
   in
     bind (toJson responseBody) (traverse toRecord)
 
