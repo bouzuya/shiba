@@ -12,8 +12,8 @@ import Bouzuya.HTTP.Client (fetch, headers, method, url)
 import Bouzuya.HTTP.Method as Method
 import Data.Array as Array
 import Data.DateTime (DateTime)
-import Data.Either (Either, either)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Either (hush)
+import Data.Maybe (Maybe, fromJust)
 import Data.Options ((:=))
 import Data.String (Pattern(..))
 import Data.String as String
@@ -23,7 +23,7 @@ import DateTimeFormat as DateTimeFormat
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import Partial.Unsafe (unsafePartial)
-import Prelude (bind, compose, const, join, map, pure, (<>))
+import Prelude (bind, compose, join, map, pure, (<>))
 import Simple.JSON as SimpleJSON
 
 type Commit =
@@ -67,8 +67,6 @@ type TagJSON =
   , tarball_url :: String
   , zipball_url :: String
   }
-maybeFromEither :: forall a b. Either a b -> Maybe b
-maybeFromEither = either (const Nothing) Just
 
 ownerAndRepo :: Repo -> { owner :: String, repo :: String }
 ownerAndRepo { fullName } = unsafePartial fromJust do
@@ -98,14 +96,12 @@ parseCommit :: String -> Maybe Commit
 parseCommit responseBody =
   let
     toJson :: String -> Maybe CommitJSON
-    toJson = compose maybeFromEither SimpleJSON.readJSON
+    toJson = compose hush SimpleJSON.readJSON
     toRecord json = do
       sha <- pure json.sha
       authorDateString <- pure json.commit.author.date
       authorDate <-
-        either
-          (const Nothing)
-          Just
+        hush
           (DateTimeFormat.parse
             DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
             authorDateString)
@@ -136,12 +132,12 @@ parseCommits :: String -> Maybe (Array Commit)
 parseCommits responseBody =
   let
     toJson :: String -> Maybe (Array CommitJSON)
-    toJson = compose maybeFromEither SimpleJSON.readJSON
+    toJson = compose hush SimpleJSON.readJSON
     toRecord json = do
       sha <- pure json.sha
       authorDateString <- pure json.commit.author.date
       authorDate <-
-        maybeFromEither
+        hush
           ( DateTimeFormat.parse
               DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
               authorDateString
@@ -168,13 +164,13 @@ parseRepos :: String -> Maybe (Array Repo)
 parseRepos responseBody =
   let
     toJson :: String -> Maybe (Array RepoJSON)
-    toJson = compose maybeFromEither SimpleJSON.readJSON
+    toJson = compose hush SimpleJSON.readJSON
     toRecord :: RepoJSON -> Maybe Repo
     toRecord json = do
       fullName <- pure json.full_name
       updatedAtString <- pure json.updated_at
       updatedAt <-
-        maybeFromEither
+        hush
           ( DateTimeFormat.parse
               DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
               updatedAtString
@@ -201,7 +197,7 @@ parseTags :: String -> Maybe (Array Tag)
 parseTags responseBody =
   let
     toJson :: String -> Maybe (Array TagJSON)
-    toJson = compose maybeFromEither SimpleJSON.readJSON
+    toJson = compose hush SimpleJSON.readJSON
     toRecord json = do
       commit <- pure json.commit
       name <- pure json.name
