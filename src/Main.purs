@@ -40,12 +40,11 @@ main = launchAff_ do
     woy = weekOfYear today
     fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom)) -- JST
     ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))    -- JST
-    toDateTime d = DateTime d (Time bottom bottom bottom bottom)
-    fdt = (toDateTime fd)
+    fdt = DateTime fd (Time bottom bottom bottom bottom)
     fdtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) fdt)) -- UTC
-    ldt = (toDateTime ld)
+    ldt = DateTime ld (Time top top top top)
     ldtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) ldt)) -- UTC
-    filter = Array.filter (\a -> fdtwz <= a.updatedAt && a.updatedAt <= ldtwz)
+    filter = Array.filter (\a -> fdtwz <= a.pushedAt && a.pushedAt <= ldtwz)
   reposMaybe <- fetchRepos user
   repos <- maybe (throwError (error "repos error")) pure reposMaybe
   let filtered = filter repos
