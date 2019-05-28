@@ -8,7 +8,10 @@ module GitHub
   , fetchTags
   ) where
 
-import Bouzuya.DateTime.Formatter.DateTime as DateTimeFormatter
+import Prelude
+
+import Bouzuya.DateTime.Formatter.OffsetDateTime as OffsetDateTimeFormatter
+import Bouzuya.DateTime.OffsetDateTime as OffsetDateTime
 import Bouzuya.HTTP.Client (fetch, headers, method, url)
 import Bouzuya.HTTP.Method as Method
 import Data.Array as Array
@@ -23,7 +26,6 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import Partial.Unsafe (unsafePartial)
-import Prelude (bind, compose, join, map, pure, (<>))
 import Simple.JSON as SimpleJSON
 
 type Commit =
@@ -70,6 +72,14 @@ type TagJSON =
   , zipball_url :: String
   }
 
+dateTimeFromString :: String -> Maybe DateTime
+dateTimeFromString =
+  (map OffsetDateTime.toUTCDateTime) <<< OffsetDateTimeFormatter.fromString
+
+dateTimeToString :: DateTime -> String
+dateTimeToString =
+  OffsetDateTimeFormatter.toString <<< OffsetDateTime.fromUTCDateTimeInUTC
+
 ownerAndRepo :: Repo -> { owner :: String, repo :: String }
 ownerAndRepo { fullName } = unsafePartial fromJust do
   s <- pure (String.split (Pattern "/") fullName)
@@ -102,7 +112,7 @@ parseCommit responseBody =
     toRecord json = do
       sha <- pure json.sha
       authorDateString <- pure json.commit.author.date
-      authorDate <- DateTimeFormatter.fromString authorDateString
+      authorDate <- dateTimeFromString authorDateString
       pure { authorDate, sha }
   in
     bind (toJson responseBody) toRecord
@@ -116,8 +126,8 @@ fetchCommits r since until =
 fetchCommits' :: String -> String -> DateTime -> DateTime -> Aff (Maybe String)
 fetchCommits' owner repo since until = do
   let
-    s = DateTimeFormatter.toString since
-    u = DateTimeFormatter.toString until
+    s = dateTimeToString since
+    u = dateTimeToString until
     qs = "since=" <> s <> "&until=" <> u <> "&per_page=100"
     path = "/repos/" <> owner <> "/" <> repo <> "/commits"
     url' = "https://api.github.com" <> path <> "?" <> qs
@@ -137,7 +147,7 @@ parseCommits responseBody =
     toRecord json = do
       sha <- pure json.sha
       authorDateString <- pure json.commit.author.date
-      authorDate <- DateTimeFormatter.fromString authorDateString
+      authorDate <- dateTimeFromString authorDateString
       pure { authorDate, sha }
   in
     bind (toJson responseBody) (traverse toRecord)
@@ -168,9 +178,9 @@ parseRepos responseBody =
     toRecord json = do
       fullName <- pure json.full_name
       pushedAtString <- pure json.pushed_at
-      pushedAt <- DateTimeFormatter.fromString pushedAtString
+      pushedAt <- dateTimeFromString pushedAtString
       updatedAtString <- pure json.updated_at
-      updatedAt <- DateTimeFormatter.fromString updatedAtString
+      updatedAt <- dateTimeFromString updatedAtString
       pure { fullName, pushedAt, updatedAt }
   in
     bind (toJson responseBody) (traverse toRecord)
