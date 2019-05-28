@@ -8,6 +8,7 @@ You can edit this file as you like.
     [ "bouzuya-datetime"
     , "bouzuya-datetime-formatter"
     , "bouzuya-http-client"
+    , "debug"
     , "formatters"
     , "now"
     , "psci-support"
