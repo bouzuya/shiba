@@ -8,6 +8,7 @@ module GitHub
   , fetchTags
   ) where
 
+import Bouzuya.DateTime.Formatter.DateTime as DateTimeFormatter
 import Bouzuya.HTTP.Client (fetch, headers, method, url)
 import Bouzuya.HTTP.Method as Method
 import Data.Array as Array
@@ -19,7 +20,6 @@ import Data.String (Pattern(..))
 import Data.String as String
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import DateTimeFormat as DateTimeFormat
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import Partial.Unsafe (unsafePartial)
@@ -102,11 +102,7 @@ parseCommit responseBody =
     toRecord json = do
       sha <- pure json.sha
       authorDateString <- pure json.commit.author.date
-      authorDate <-
-        hush
-          (DateTimeFormat.parse
-            DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
-            authorDateString)
+      authorDate <- DateTimeFormatter.fromString authorDateString
       pure { authorDate, sha }
   in
     bind (toJson responseBody) toRecord
@@ -114,14 +110,17 @@ parseCommit responseBody =
 fetchCommits :: Repo -> DateTime -> DateTime -> Aff (Maybe (Array Commit))
 fetchCommits r since until =
   let { owner, repo } = ownerAndRepo r
-  in map (compose join (map parseCommits)) (fetchCommits' owner repo since until)
+  in
+    map (compose join (map parseCommits)) (fetchCommits' owner repo since until)
 
 fetchCommits' :: String -> String -> DateTime -> DateTime -> Aff (Maybe String)
 fetchCommits' owner repo since until = do
   let
-    s = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds since
-    u = DateTimeFormat.format DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds until
-    url' = "https://api.github.com/repos/" <> owner <> "/" <> repo <> "/commits?since=" <> s <> "&until=" <> u <> "&per_page=100"
+    s = DateTimeFormatter.toString since
+    u = DateTimeFormatter.toString until
+    qs = "since=" <> s <> "&until=" <> u <> "&per_page=100"
+    path = "/repos/" <> owner <> "/" <> repo <> "/commits"
+    url' = "https://api.github.com" <> path <> "?" <> qs
   response <-
     fetch
       ( headers := (Object.fromFoldable [(Tuple "User-Agent" "shiba")])
@@ -138,12 +137,7 @@ parseCommits responseBody =
     toRecord json = do
       sha <- pure json.sha
       authorDateString <- pure json.commit.author.date
-      authorDate <-
-        hush
-          ( DateTimeFormat.parse
-              DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
-              authorDateString
-          )
+      authorDate <- DateTimeFormatter.fromString authorDateString
       pure { authorDate, sha }
   in
     bind (toJson responseBody) (traverse toRecord)
@@ -153,7 +147,10 @@ fetchRepos user = map (compose join (map parseRepos)) (fetchRepos' user)
 
 fetchRepos' :: String -> Aff (Maybe String)
 fetchRepos' user = do
-  let url' = "https://api.github.com/users/" <> user <> "/repos?type=owner&sort=pushed&direction=desc&per_page=100"
+  let
+    qs = "type=owner&sort=pushed&direction=desc&per_page=100"
+    path = "/users/" <> user <> "/repos"
+    url' = "https://api.github.com" <> path <> "?" <> qs
   response <-
     fetch
       ( headers := (Object.fromFoldable [(Tuple "User-Agent" "shiba")])
@@ -171,19 +168,9 @@ parseRepos responseBody =
     toRecord json = do
       fullName <- pure json.full_name
       pushedAtString <- pure json.pushed_at
-      pushedAt <-
-        hush
-          ( DateTimeFormat.parse
-              DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
-              pushedAtString
-          )
+      pushedAt <- DateTimeFormatter.fromString pushedAtString
       updatedAtString <- pure json.updated_at
-      updatedAt <-
-        hush
-          ( DateTimeFormat.parse
-              DateTimeFormat.iso8601DateTimeFormatWithoutMilliseconds
-              updatedAtString
-          )
+      updatedAt <- DateTimeFormatter.fromString updatedAtString
       pure { fullName, pushedAt, updatedAt }
   in
     bind (toJson responseBody) (traverse toRecord)
