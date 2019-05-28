@@ -1,23 +1,24 @@
 module Main
   ( main ) where
 
-import Bouzuya.DateTime (Time(..), adjust, exactDateFromWeekOfYear, weekOfYear, year)
+import Prelude
+
 import Data.Array (intercalate, zip)
 import Data.Array as Array
-import Data.DateTime (DateTime(..))
-import Data.Maybe (fromJust, isJust, maybe)
-import Data.Time.Duration (Hours(..))
+import Data.DateTime (DateTime)
+import Data.Maybe (isJust, maybe)
+import Data.Maybe as Maybe
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import DateTimeFormat as DateTimeFormat
+import Data.Tuple as Tuple
 import Effect (Effect)
 import Effect.Aff (Aff, error, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Effect.Now (nowDate)
+import Effect.Now as Now
 import GitHub (Tag, Repo, fetchCommits, fetchRepos, fetchTags)
-import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, bottom, eq, map, negate, pure, top, (&&), (<=), (<>), (>))
+import Partial.Unsafe as Unsafe
+import YearWeekRange as YearWeekRange
 
 getTags :: DateTime -> DateTime -> Repo -> Aff (Array Tag)
 getTags fdt ldt repo = do
@@ -33,18 +34,13 @@ getTags fdt ldt repo = do
 
 main :: Effect Unit
 main = launchAff_ do
-  today <- liftEffect nowDate
+  now <- liftEffect Now.nowDateTime
   let
     user = "bouzuya"
-    y = year today
-    woy = weekOfYear today
-    fd = unsafePartial (fromJust (exactDateFromWeekOfYear y woy bottom)) -- JST
-    ld = unsafePartial (fromJust (exactDateFromWeekOfYear y woy top))    -- JST
-    fdt = DateTime fd (Time bottom bottom bottom bottom)
-    fdtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) fdt)) -- UTC
-    ldt = DateTime ld (Time top top top top)
-    ldtwz = unsafePartial (fromJust (adjust (Hours (negate 9.0)) ldt)) -- UTC
-    filter = Array.filter (\a -> fdtwz <= a.pushedAt && a.pushedAt <= ldtwz)
+    range =
+      Unsafe.unsafePartial (Maybe.fromJust (YearWeekRange.fromDateTime now))
+    Tuple.Tuple fdtwz ldtwz = YearWeekRange.toDateTime range
+    filter = Array.filter (\a -> YearWeekRange.between range a.pushedAt)
   reposMaybe <- fetchRepos user
   repos <- maybe (throwError (error "repos error")) pure reposMaybe
   let filtered = filter repos
@@ -53,11 +49,7 @@ main = launchAff_ do
     zipped :: Array (Tuple Repo (Array Tag))
     zipped = zip filtered tags
   let
-    dateLine =
-      ( (DateTimeFormat.format DateTimeFormat.iso8601DateFormat fdt)
-      <> "/"
-      <> (DateTimeFormat.format DateTimeFormat.iso8601DateFormat ldt)
-      )
+    dateLine = YearWeekRange.toString range
     repoLines =
       map
         (\(Tuple r ts) ->
