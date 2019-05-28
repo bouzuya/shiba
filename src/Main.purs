@@ -3,11 +3,12 @@ module Main
 
 import Prelude
 
-import Data.Array (intercalate, zip)
+import Data.Array (zip)
 import Data.Array as Array
 import Data.DateTime (DateTime)
 import Data.Maybe (isJust, maybe)
 import Data.Maybe as Maybe
+import Data.String as String
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
@@ -56,8 +57,8 @@ main = launchAff_ do
           "- [" <> r.fullName <> "][] ... "
           <>
             if Array.length ts > 0
-            then (intercalate "," (map _.name ts))
+            then String.joinWith ", " (map _.name (Array.sort ts))
             else "(none)"
         )
         zipped
-  liftEffect (log (intercalate "\n" ([dateLine, ""] <> repoLines)))
+  liftEffect (log (String.joinWith "\n" ([dateLine, ""] <> repoLines)))
