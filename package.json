@@ -1,23 +1,29 @@
 {
   "name": "shiba",
+  "description": "## Example",
   "version": "1.0.0",
-  "author": {
-    "email": "m@bouzuya.net",
-    "name": "bouzuya",
-    "url": "https://bouzuya.net/"
+  "author": "bouzuya <m@bouzuya.net> (https://bouzuya.net/)",
+  "bugs": {
+    "url": "https://github.com/bouzuya/shiba/issues"
   },
   "dependencies": {},
   "devDependencies": {
-    "psc-package-bin-simple": "^1.0.1",
-    "purescript": "^0.12.0"
+    "purescript": "^0.12.5",
+    "spago": "^0.8.0"
   },
+  "homepage": "https://github.com/bouzuya/shiba#readme",
   "keywords": [],
   "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bouzuya/shiba.git"
+  },
   "scripts": {
-    "build": "psc-package build",
-    "psc-package": "psc-package",
-    "repl": "psc-package repl",
-    "start": "node --eval \"require('./output/Main').main();\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "spago build",
+    "repl": "spago repl",
+    "spago": "spago",
+    "start": "node --eval \"require('./output/Main/index.js').main();\"",
+    "test": "spago test"
   }
 }
